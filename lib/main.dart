@@ -1,5 +1,6 @@
-
 import 'package:flutter/material.dart';
+import 'package:rebite_mobile/pages/home_pages.dart';
+
 import 'theme/app_theme.dart';
 
 void main() {
@@ -15,11 +16,7 @@ class ReBiteApp extends StatelessWidget {
       title: 'ReBite',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const Scaffold(
-        body: Center(
-          child: Text('ReBite'),
-        ),
-      ),
+      home: const HomePage(),
     );
   }
 }
