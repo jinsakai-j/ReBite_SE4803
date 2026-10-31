@@ -37,11 +37,43 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
     if (result != null && result is Product) {
       setState(() {
         if (index != null) {
-          _products[index] = result;
+          products[index] = result;
         } else {
-          _products.add(result);
+          products.add(result);
         }
       });
     }
+    void _deleteProduct(int index) {
+      setState(() {
+        products.removeAt(index);
+      });
+    }
+
+    @override
+    Widget build(BuildContext context) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF7FAF7), // Sesuai ketentuan background
+        appBar: AppBar(
+          title: const Text(
+            'Tenant Dashboard',
+            style: TextStyle(
+              color: Color(0xFF242B26),
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
+          ),
+          backgroundColor: const Color(0xFFFFFFFF),
+          elevation: 0,
+          centerTitle: true,
+          iconTheme: const IconThemeData(color: Color(0xFF242B26)),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    throw UnimplementedError();
   }
 }
