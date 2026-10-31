@@ -85,6 +85,18 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     );
   }
 
+  void _saveProduct() {
+    if (_nameController.text.isNotEmpty) {
+      final newProduct = Product(
+        name: _nameController.text,
+        price: _priceController.text,
+        stock: _stockController.text,
+        imagePath: _selectedImagePath,
+      );
+      Navigator.pop(context, newProduct);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // TODO: implement build

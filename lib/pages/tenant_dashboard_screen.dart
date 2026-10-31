@@ -16,13 +16,13 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
       name: 'Salad fresh',
       price: 'Rp 10.000',
       stock: '5 porsi',
-      imagePath: 'assets/images/product1.jpg',
+      imagePath: '',
     ),
     Product(
       name: 'Nasi bakar',
       price: 'Rp 15.000',
       stock: '5 porsi',
-      imagePath: 'assets/images/product1.jpg',
+      imagePath: '',
     ),
   ];
 
