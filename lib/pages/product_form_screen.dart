@@ -62,7 +62,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               onTap: () {
                 Navigator.pop(context);
                 setState(() {
-                  _selectedImage = '';
+                  _selectedImagePath = '';
                 });
               },
             ),
@@ -75,7 +75,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               onTap: () {
                 Navigator.pop(context);
                 setState(() {
-                  _selectedImage = '';
+                  _selectedImagePath = '';
                 });
               },
             ),
@@ -83,5 +83,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    throw UnimplementedError();
   }
 }
