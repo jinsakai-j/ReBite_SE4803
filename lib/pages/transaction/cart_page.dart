@@ -3,24 +3,89 @@ import 'package:flutter/material.dart';
 import '../../data/transaction_dummy_data.dart';
 import '../../models/cart_item_model.dart';
 
-class CartPage extends StatelessWidget {
+class CartPage extends StatefulWidget {
   const CartPage({super.key});
 
+  @override
+  State<CartPage> createState() => _CartPageState();
+}
+
+class _CartPageState extends State<CartPage> {
   static const Color primaryGreen = Color(0xFF176B45);
   static const Color backgroundColor = Color(0xFFF7FAF7);
   static const Color textColor = Color(0xFF242B26);
 
+  // Data keranjang disimpan sebagai state halaman.
+  late List<CartItemModel> cartItems;
+
+  @override
+  void initState() {
+    super.initState();
+    cartItems = TransactionDummyData.cartItems;
+  }
+
+  // Menghitung jumlah seluruh porsi.
+  int get totalQuantity {
+    return cartItems.fold<int>(0, (total, item) => total + item.quantity);
+  }
+
+  // Menghitung total belanja.
+  int get totalPrice {
+    return TransactionDummyData.calculateCartTotal(cartItems);
+  }
+
+  // Menambahkan jumlah produk.
+  void _increaseQuantity(CartItemModel item) {
+    if (item.quantity >= item.stock) {
+      _showMessage('Jumlah tidak boleh melebihi stok tersedia');
+      return;
+    }
+
+    setState(() {
+      item.quantity++;
+    });
+  }
+
+  // Mengurangi jumlah produk.
+  void _decreaseQuantity(CartItemModel item) {
+    if (item.quantity <= 1) {
+      _showMessage(
+        'Jumlah minimal 1. Gunakan tombol hapus untuk menghapus produk.',
+      );
+      return;
+    }
+
+    setState(() {
+      item.quantity--;
+    });
+  }
+
+  // Menghapus produk dari keranjang.
+  void _removeItem(CartItemModel item) {
+    setState(() {
+      cartItems.remove(item);
+    });
+
+    _showMessage('${item.productName} dihapus dari keranjang');
+  }
+
+  // Menampilkan pesan singkat.
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+    );
+  }
+
+  // Format harga ke Rupiah sederhana.
+  String _formatPrice(int price) {
+    return price.toString().replaceAllMapped(
+      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+      (match) => '.',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final List<CartItemModel> cartItems = TransactionDummyData.cartItems;
-
-    final int totalPrice = TransactionDummyData.calculateCartTotal(cartItems);
-
-    final int totalQuantity = cartItems.fold<int>(
-      0,
-      (total, item) => total + item.quantity,
-    );
-
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
@@ -29,23 +94,23 @@ class CartPage extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
         ),
         backgroundColor: backgroundColor,
-        elevation: 0,
         centerTitle: true,
       ),
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: cartItems.length,
-              itemBuilder: (context, index) {
-                final item = cartItems[index];
-
-                return _buildCartItem(item);
-              },
-            ),
+            child: cartItems.isEmpty
+                ? _buildEmptyCart()
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: cartItems.length,
+                    itemBuilder: (context, index) {
+                      final item = cartItems[index];
+                      return _buildCartItem(item);
+                    },
+                  ),
           ),
-          _buildCartSummary(context, totalQuantity, totalPrice),
+          _buildCartSummary(),
         ],
       ),
     );
@@ -81,15 +146,25 @@ class CartPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.productName,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.productName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Hapus produk',
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      onPressed: () => _removeItem(item),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 6),
                 Text(
                   'Rp${_formatPrice(item.price)} / porsi',
                   style: const TextStyle(
@@ -97,16 +172,51 @@ class CartPage extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Jumlah: ${item.quantity}',
-                  style: const TextStyle(color: Colors.black54),
-                ),
                 const SizedBox(height: 6),
+                Text(
+                  'Stok tersedia: ${item.stock}',
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    IconButton.outlined(
+                      tooltip: 'Kurangi jumlah',
+                      onPressed: () => _decreaseQuantity(item),
+                      icon: const Icon(Icons.remove),
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        '${item.quantity}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    IconButton.outlined(
+                      tooltip: 'Tambah jumlah',
+                      onPressed: item.quantity >= item.stock
+                          ? null
+                          : () => _increaseQuantity(item),
+                      icon: const Icon(Icons.add),
+                      constraints: const BoxConstraints(
+                        minWidth: 36,
+                        minHeight: 36,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
                 Text(
                   'Subtotal: Rp${_formatPrice(item.subtotal)}',
                   style: const TextStyle(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.bold,
                     color: textColor,
                   ),
                 ),
@@ -118,11 +228,32 @@ class CartPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCartSummary(
-    BuildContext context,
-    int totalQuantity,
-    int totalPrice,
-  ) {
+  Widget _buildEmptyCart() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.shopping_cart_outlined, color: primaryGreen, size: 72),
+          SizedBox(height: 16),
+          Text(
+            'Keranjang masih kosong',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Belum ada makanan yang ditambahkan.',
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCartSummary() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
@@ -166,19 +297,15 @@ class CartPage extends StatelessWidget {
             SizedBox(
               height: 48,
               child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Halaman Checkout akan dibuat '
-                        'pada Commit 6.',
-                      ),
-                    ),
-                  );
-                },
+                onPressed: cartItems.isEmpty
+                    ? null
+                    : () {
+                        _showMessage('Halaman Checkout dibuat pada Commit 6.');
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryGreen,
                   foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.grey.shade300,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -192,15 +319,6 @@ class CartPage extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-
-  String _formatPrice(int price) {
-    final String number = price.toString();
-
-    return number.replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'),
-      (match) => '.',
     );
   }
 }
