@@ -22,6 +22,15 @@ class SmartFeaturesDummyData {
       salesDay: 'Selasa',
       salesTime: 'Sore',
     ),
+    SurplusPredictionModel(
+      productName: 'Donat Gula',
+      category: 'Roti',
+      producedQuantity: 15,
+      currentStock: 12,
+      salesHistory: [3],
+      salesDay: 'Rabu',
+      salesTime: 'Sore',
+    ),
   ];
 
   static final List<DiscountRecommendationModel> discountProducts = [
