@@ -4,6 +4,7 @@ import '../data/dummy_products.dart';
 import '../widgets/product_card.dart';
 import '../widgets/food_search_bar.dart';
 import '../widgets/category_filter.dart';
+import 'product_detail_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -201,8 +202,12 @@ class _HomePageState extends State<HomePage> {
                   return ProductCard(
                     product: product,
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('${product.name} dipilih')),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              ProductDetailPage(product: product),
+                        ),
                       );
                     },
                   );
