@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'checkout_page.dart';
+
 import '../../data/transaction_dummy_data.dart';
 import '../../models/cart_item_model.dart';
 
@@ -15,7 +17,6 @@ class _CartPageState extends State<CartPage> {
   static const Color backgroundColor = Color(0xFFF7FAF7);
   static const Color textColor = Color(0xFF242B26);
 
-  // Data keranjang disimpan sebagai state halaman.
   late List<CartItemModel> cartItems;
 
   @override
@@ -24,17 +25,14 @@ class _CartPageState extends State<CartPage> {
     cartItems = TransactionDummyData.cartItems;
   }
 
-  // Menghitung jumlah seluruh porsi.
   int get totalQuantity {
     return cartItems.fold<int>(0, (total, item) => total + item.quantity);
   }
 
-  // Menghitung total belanja.
   int get totalPrice {
     return TransactionDummyData.calculateCartTotal(cartItems);
   }
 
-  // Menambahkan jumlah produk.
   void _increaseQuantity(CartItemModel item) {
     if (item.quantity >= item.stock) {
       _showMessage('Jumlah tidak boleh melebihi stok tersedia');
@@ -46,7 +44,6 @@ class _CartPageState extends State<CartPage> {
     });
   }
 
-  // Mengurangi jumlah produk.
   void _decreaseQuantity(CartItemModel item) {
     if (item.quantity <= 1) {
       _showMessage(
@@ -60,7 +57,6 @@ class _CartPageState extends State<CartPage> {
     });
   }
 
-  // Menghapus produk dari keranjang.
   void _removeItem(CartItemModel item) {
     setState(() {
       cartItems.remove(item);
@@ -69,14 +65,12 @@ class _CartPageState extends State<CartPage> {
     _showMessage('${item.productName} dihapus dari keranjang');
   }
 
-  // Menampilkan pesan singkat.
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
     );
   }
 
-  // Format harga ke Rupiah sederhana.
   String _formatPrice(int price) {
     return price.toString().replaceAllMapped(
       RegExp(r'\B(?=(\d{3})+(?!\d))'),
@@ -300,7 +294,25 @@ class _CartPageState extends State<CartPage> {
                 onPressed: cartItems.isEmpty
                     ? null
                     : () {
-                        _showMessage('Halaman Checkout dibuat pada Commit 6.');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CheckoutPage(
+                              cartItems: cartItems
+                                  .map(
+                                    (item) => CartItemModel(
+                                      productId: item.productId,
+                                      productName: item.productName,
+                                      tenantId: item.tenantId,
+                                      price: item.price,
+                                      stock: item.stock,
+                                      quantity: item.quantity,
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                          ),
+                        );
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryGreen,
