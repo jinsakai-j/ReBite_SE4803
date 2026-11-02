@@ -4,6 +4,7 @@ class DiscountRecommendationModel {
   final int remainingStock;
   final int minutesUntilClosing;
   final int soldToday;
+  final int minutesSellingToday;
 
   DiscountRecommendationModel({
     required this.productName,
@@ -11,5 +12,6 @@ class DiscountRecommendationModel {
     required this.remainingStock,
     required this.minutesUntilClosing,
     required this.soldToday,
+    required this.minutesSellingToday,
   });
 }

@@ -40,6 +40,7 @@ class SmartFeaturesDummyData {
       remainingStock: 10,
       minutesUntilClosing: 60,
       soldToday: 5,
+      minutesSellingToday: 240,
     ),
     DiscountRecommendationModel(
       productName: 'Roti Cokelat',
@@ -47,6 +48,7 @@ class SmartFeaturesDummyData {
       remainingStock: 8,
       minutesUntilClosing: 120,
       soldToday: 12,
+      minutesSellingToday: 240,
     ),
   ];
 
