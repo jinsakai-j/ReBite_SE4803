@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/cart_item_model.dart';
 import '../../models/order_model.dart';
+import 'payment_proof_page.dart';
 
 class PaymentPage extends StatefulWidget {
   final List<CartItemModel> cartItems;
@@ -34,19 +35,10 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  String _methodName(PaymentMethod method) {
-    switch (method) {
-      case PaymentMethod.cash:
-        return 'Cash';
-      case PaymentMethod.mobileBanking:
-        return 'Mobile Banking';
-      case PaymentMethod.eWallet:
-        return 'E-Wallet';
-    }
-  }
-
   void _continuePayment() {
-    if (selectedMethod == null) {
+    final PaymentMethod? method = selectedMethod;
+
+    if (method == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Pilih metode pembayaran terlebih dahulu.'),
@@ -55,13 +47,25 @@ class _PaymentPageState extends State<PaymentPage> {
       return;
     }
 
-    final method = selectedMethod!;
+    if (method == PaymentMethod.cash) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Metode Cash dipilih. '
+            'Pembayaran dilakukan saat pengambilan. '
+            'Pembuatan pesanan dilanjutkan pada Commit 9.',
+          ),
+        ),
+      );
+      return;
+    }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Metode ${_methodName(method)} dipilih. '
-          'Proses pembayaran dilanjutkan pada commit berikutnya.',
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaymentProofPage(
+          cartItems: widget.cartItems,
+          paymentMethod: method,
         ),
       ),
     );
@@ -130,9 +134,6 @@ class _PaymentPageState extends State<PaymentPage> {
           style: TextStyle(color: Colors.black54),
         ),
         const SizedBox(height: 20),
-
-        // RadioGroup menggantikan groupValue dan onChanged
-        // yang sebelumnya ada pada RadioListTile.
         RadioGroup<PaymentMethod>(
           groupValue: selectedMethod,
           onChanged: (PaymentMethod? value) {
@@ -145,21 +146,23 @@ class _PaymentPageState extends State<PaymentPage> {
               _buildPaymentOption(
                 method: PaymentMethod.cash,
                 title: 'Cash',
-                description:
-                    'Bayar tunai langsung kepada tenant saat pengambilan.',
+                description: 'Bayar tunai kepada tenant saat pengambilan.',
                 icon: Icons.payments_outlined,
               ),
               _buildPaymentOption(
                 method: PaymentMethod.mobileBanking,
                 title: 'Mobile Banking',
-                description: 'Transfer melalui mobile banking dan unggah bukti pembayaran.',
+                description:
+                    'Transfer melalui mobile banking '
+                    'dan lampirkan bukti pembayaran.',
                 icon: Icons.account_balance_outlined,
               ),
               _buildPaymentOption(
                 method: PaymentMethod.eWallet,
                 title: 'E-Wallet',
                 description:
-                    'Bayar menggunakan e-wallet dan unggah bukti pembayaran.',
+                    'Bayar menggunakan e-wallet '
+                    'dan lampirkan bukti pembayaran.',
                 icon: Icons.account_balance_wallet_outlined,
               ),
             ],
