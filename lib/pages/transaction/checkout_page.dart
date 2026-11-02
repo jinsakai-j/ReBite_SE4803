@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'payment_page.dart';
+
 import '../../models/cart_item_model.dart';
 
 class CheckoutPage extends StatelessWidget {
@@ -215,15 +217,15 @@ class CheckoutPage extends StatelessWidget {
                 onPressed: cartItems.isEmpty
                     ? null
                     : () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Pemilihan metode pembayaran '
-                              'akan dibuat pada Commit 7.',
-                            ),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                PaymentPage(cartItems: cartItems),
                           ),
                         );
                       },
+
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryGreen,
                   foregroundColor: Colors.white,
