@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../models/order_model.dart';
 import '../../services/transaction_service.dart';
 
+import 'order_detail_page.dart';
+
 class PaymentProofPage extends StatefulWidget {
   final String orderId;
 
@@ -105,6 +107,8 @@ class _PaymentProofPageState extends State<PaymentProofPage> {
   }
 
   void _submitProof() {
+    if (_isSubmitted) return;
+
     if (_proofBytes == null || _proofName == null) {
       _showMessage('Pilih bukti pembayaran terlebih dahulu.');
       return;
@@ -122,42 +126,11 @@ class _PaymentProofPageState extends State<PaymentProofPage> {
         _isSubmitted = true;
       });
 
-      showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) {
-          return AlertDialog(
-            title: const Text('Bukti Tercatat'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Bukti pembayaran berhasil dicatat '
-                  'dalam simulasi lokal.',
-                ),
-                const SizedBox(height: 12),
-                SelectableText('ID Pesanan: ${updatedOrder.orderId}'),
-                const SizedBox(height: 8),
-                Text('Status: ${updatedOrder.statusLabel}'),
-                const SizedBox(height: 12),
-                const Text(
-                  'Bukti masih perlu diverifikasi oleh tenant. '
-                  'Belum ada unggahan ke server.',
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(dialogContext);
-                  Navigator.pop(context);
-                },
-                child: const Text('Selesai'),
-              ),
-            ],
-          );
-        },
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute<void>(
+          builder: (context) => OrderDetailPage(orderId: updatedOrder.orderId),
+        ),
       );
     } on StateError catch (error) {
       _showMessage(error.message);
@@ -193,8 +166,8 @@ class _PaymentProofPageState extends State<PaymentProofPage> {
                 'Rp${_formatPrice(currentOrder.totalPrice)}',
                 style: const TextStyle(
                   color: primaryGreen,
-                  fontSize: 18,
                   fontWeight: FontWeight.bold,
+                  fontSize: 18,
                 ),
               ),
             ],
