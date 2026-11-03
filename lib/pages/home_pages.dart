@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/dummy_products.dart';
-import '../widgets/product_card.dart';
-import '../widgets/food_search_bar.dart';
-import '../widgets/category_filter.dart';
+import '../widgets/widgets.dart';
 import 'product_detail_page.dart';
 
 class HomePage extends StatefulWidget {

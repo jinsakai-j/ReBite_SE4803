@@ -2,6 +2,81 @@ import 'package:flutter/material.dart';
 
 import '../models/product.dart';
 
+// Widget untuk filter kategori makanan
+class CategoryFilter extends StatelessWidget {
+  final String selectedCategory;
+  final ValueChanged<String> onSelected;
+
+  const CategoryFilter({
+    super.key,
+    required this.selectedCategory,
+    required this.onSelected,
+  });
+
+  final List<String> categories = const ['Semua', 'Makanan', 'Minuman', 'Roti'];
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: categories.map((category) {
+          final selected = selectedCategory == category;
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(category),
+              selected: selected,
+              onSelected: (_) => onSelected(category),
+              selectedColor: const Color(0xFF176B45),
+              backgroundColor: Colors.white,
+              side: const BorderSide(color: Color(0xFFD9E3DC)),
+              labelStyle: TextStyle(
+                color: selected ? Colors.white : const Color(0xFF242B26),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+// Widget untuk pencarian makanan
+class FoodSearchBar extends StatelessWidget {
+  final ValueChanged<String> onChanged;
+
+  const FoodSearchBar({super.key, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        hintText: 'Cari makanan favoritmu...',
+        prefixIcon: const Icon(Icons.search, color: Color(0xFF176B45)),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFD9E3DC)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFD9E3DC)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFF176B45), width: 1.5),
+        ),
+      ),
+    );
+  }
+}
+
+// Widget untuk menampilkan kartu produk makanan
 class ProductCard extends StatelessWidget {
   final Product product;
   final VoidCallback onTap;
