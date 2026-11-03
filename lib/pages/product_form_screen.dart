@@ -186,6 +186,31 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 color: Color(0xFF242B26),
               ),
             ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _priceController,
+              decoration: InputDecoration(
+                hintText: 'Contoh: Rp 20.000',
+                filled: true,
+                fillColor: const Color(0xFFFFFFFF),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFFD9E3DC)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFFD9E3DC)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Stok',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF242B26),
+              ),
+            ),
           ],
         ),
       ),
