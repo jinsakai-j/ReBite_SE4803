@@ -3,18 +3,13 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../models/cart_item_model.dart';
 import '../../models/order_model.dart';
+import '../../services/transaction_service.dart';
 
 class PaymentProofPage extends StatefulWidget {
-  final List<CartItemModel> cartItems;
-  final PaymentMethod paymentMethod;
+  final String orderId;
 
-  const PaymentProofPage({
-    super.key,
-    required this.cartItems,
-    required this.paymentMethod,
-  });
+  const PaymentProofPage({super.key, required this.orderId});
 
   @override
   State<PaymentProofPage> createState() => _PaymentProofPageState();
@@ -29,25 +24,12 @@ class _PaymentProofPageState extends State<PaymentProofPage> {
 
   Uint8List? _proofBytes;
   String? _proofName;
+
   bool _isLoading = false;
+  bool _isSubmitted = false;
 
-  int get totalPrice {
-    return widget.cartItems.fold<int>(
-      0,
-      (total, item) => total + item.subtotal,
-    );
-  }
-
-  String get methodName {
-    switch (widget.paymentMethod) {
-      case PaymentMethod.cash:
-        return 'Cash';
-      case PaymentMethod.mobileBanking:
-        return 'Mobile Banking';
-      case PaymentMethod.eWallet:
-        return 'E-Wallet';
-    }
-  }
+  OrderModel? get order =>
+      TransactionService.instance.findOrder(widget.orderId);
 
   String _formatPrice(int price) {
     return price.toString().replaceAllMapped(
@@ -62,7 +44,7 @@ class _PaymentProofPageState extends State<PaymentProofPage> {
   }
 
   Future<void> _pickProof() async {
-    if (_isLoading) return;
+    if (_isLoading || _isSubmitted) return;
 
     setState(() {
       _isLoading = true;
@@ -76,9 +58,7 @@ class _PaymentProofPageState extends State<PaymentProofPage> {
         requestFullMetadata: false,
       );
 
-      if (image == null) {
-        return;
-      }
+      if (image == null) return;
 
       final int fileSize = await image.length();
       const int maxFileSize = 5 * 1024 * 1024;
@@ -99,7 +79,7 @@ class _PaymentProofPageState extends State<PaymentProofPage> {
         _proofName = image.name;
       });
 
-      _showMessage('Bukti pembayaran berhasil dipilih.');
+      _showMessage('Gambar bukti pembayaran berhasil dipilih.');
     } catch (error) {
       if (mounted) {
         _showMessage('Gagal memilih gambar. Silakan coba lagi.');
@@ -114,41 +94,124 @@ class _PaymentProofPageState extends State<PaymentProofPage> {
   }
 
   void _removeProof() {
+    if (_isSubmitted) return;
+
     setState(() {
       _proofBytes = null;
       _proofName = null;
     });
 
-    _showMessage('Bukti pembayaran dihapus.');
+    _showMessage('Gambar bukti pembayaran dihapus.');
   }
 
   void _submitProof() {
-    if (_proofBytes == null) {
+    if (_proofBytes == null || _proofName == null) {
       _showMessage('Pilih bukti pembayaran terlebih dahulu.');
       return;
     }
 
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Bukti Pembayaran Siap'),
-          content: const Text(
-            'Gambar berhasil dipilih dan ditampilkan. '
-            'Pengiriman serta verifikasi pembayaran '
-            'akan disimulasikan pada commit berikutnya. '
-            'Belum ada file yang diunggah ke server.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-              child: const Text('Mengerti'),
+    try {
+      final OrderModel updatedOrder = TransactionService.instance
+          .submitPaymentProof(
+            orderId: widget.orderId,
+            fileName: _proofName!,
+            proofBytes: _proofBytes!,
+          );
+
+      setState(() {
+        _isSubmitted = true;
+      });
+
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text('Bukti Tercatat'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Bukti pembayaran berhasil dicatat '
+                  'dalam simulasi lokal.',
+                ),
+                const SizedBox(height: 12),
+                SelectableText('ID Pesanan: ${updatedOrder.orderId}'),
+                const SizedBox(height: 8),
+                Text('Status: ${updatedOrder.statusLabel}'),
+                const SizedBox(height: 12),
+                const Text(
+                  'Bukti masih perlu diverifikasi oleh tenant. '
+                  'Belum ada unggahan ke server.',
+                ),
+              ],
             ),
-          ],
-        );
-      },
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  Navigator.pop(context);
+                },
+                child: const Text('Selesai'),
+              ),
+            ],
+          );
+        },
+      );
+    } on StateError catch (error) {
+      _showMessage(error.message);
+    }
+  }
+
+  Widget _buildPaymentInfo(OrderModel currentOrder) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Metode'),
+              Text(
+                currentOrder.paymentMethodLabel,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Total'),
+              Text(
+                'Rp${_formatPrice(currentOrder.totalPrice)}',
+                style: const TextStyle(
+                  color: primaryGreen,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Status'),
+              Text(
+                currentOrder.statusLabel,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -174,10 +237,9 @@ class _PaymentProofPageState extends State<PaymentProofPage> {
             style: TextStyle(color: Colors.black54),
           ),
           const SizedBox(height: 16),
-
           if (_proofBytes == null)
             Container(
-              height: 190,
+              height: 180,
               decoration: BoxDecoration(
                 color: backgroundColor,
                 borderRadius: BorderRadius.circular(12),
@@ -210,7 +272,6 @@ class _PaymentProofPageState extends State<PaymentProofPage> {
                 },
               ),
             ),
-
           if (_proofName != null) ...[
             const SizedBox(height: 12),
             Text(
@@ -220,11 +281,9 @@ class _PaymentProofPageState extends State<PaymentProofPage> {
               style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),
           ],
-
           const SizedBox(height: 16),
-
           OutlinedButton.icon(
-            onPressed: _isLoading ? null : _pickProof,
+            onPressed: _isLoading || _isSubmitted ? null : _pickProof,
             icon: Icon(
               _proofBytes == null
                   ? Icons.photo_library_outlined
@@ -235,8 +294,7 @@ class _PaymentProofPageState extends State<PaymentProofPage> {
             ),
             style: OutlinedButton.styleFrom(foregroundColor: primaryGreen),
           ),
-
-          if (_proofBytes != null)
+          if (_proofBytes != null && !_isSubmitted)
             TextButton.icon(
               onPressed: _removeProof,
               icon: const Icon(Icons.delete_outline),
@@ -248,48 +306,17 @@ class _PaymentProofPageState extends State<PaymentProofPage> {
     );
   }
 
-  Widget _buildPaymentInfo() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Metode'),
-              Text(
-                methodName,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Total Pembayaran'),
-              Text(
-                'Rp${_formatPrice(totalPrice)}',
-                style: const TextStyle(
-                  color: primaryGreen,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final OrderModel? currentOrder = order;
+
+    if (currentOrder == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Bukti Pembayaran')),
+        body: const Center(child: Text('Pesanan tidak ditemukan.')),
+      );
+    }
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
@@ -303,7 +330,7 @@ class _PaymentProofPageState extends State<PaymentProofPage> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _buildPaymentInfo(),
+                _buildPaymentInfo(currentOrder),
                 const SizedBox(height: 16),
                 _buildProofCard(),
               ],
@@ -318,7 +345,11 @@ class _PaymentProofPageState extends State<PaymentProofPage> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _proofBytes == null || _isLoading
+                  onPressed:
+                      _proofBytes == null ||
+                          _isLoading ||
+                          _isSubmitted ||
+                          currentOrder.status != OrderStatus.waitingPayment
                       ? null
                       : _submitProof,
                   style: ElevatedButton.styleFrom(

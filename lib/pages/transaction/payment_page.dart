@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/cart_item_model.dart';
 import '../../models/order_model.dart';
+import '../../services/transaction_service.dart';
 import 'payment_proof_page.dart';
 
 class PaymentPage extends StatefulWidget {
@@ -20,6 +21,7 @@ class _PaymentPageState extends State<PaymentPage> {
   static const Color borderColor = Color(0xFFD9E3DC);
 
   PaymentMethod? selectedMethod;
+  OrderModel? createdOrder;
 
   int get totalPrice {
     return widget.cartItems.fold<int>(
@@ -35,39 +37,93 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  void _continuePayment() {
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _continuePayment() async {
     final PaymentMethod? method = selectedMethod;
 
     if (method == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pilih metode pembayaran terlebih dahulu.'),
-        ),
-      );
+      _showMessage('Pilih metode pembayaran terlebih dahulu.');
       return;
     }
 
-    if (method == PaymentMethod.cash) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Metode Cash dipilih. '
-            'Pembayaran dilakukan saat pengambilan. '
-            'Pembuatan pesanan dilanjutkan pada Commit 9.',
+    try {
+      // Buat pesanan hanya sekali pada halaman ini.
+      final OrderModel order =
+          createdOrder ??
+          TransactionService.instance.createOrder(
+            // ID dummy consumer untuk frontend.
+            consumerId: 'CNS001',
+            cartItems: widget.cartItems,
+            paymentMethod: method,
+          );
+
+      createdOrder = order;
+
+      if (method == PaymentMethod.cash) {
+        if (!mounted) return;
+        _showCashConfirmation(order);
+        return;
+      }
+
+      if (!mounted) return;
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute<void>(
+          builder: (context) => PaymentProofPage(orderId: order.orderId),
+        ),
+      );
+
+      if (mounted) {
+        setState(() {});
+      }
+    } on StateError catch (error) {
+      if (mounted) {
+        _showMessage(error.message);
+      }
+    }
+  }
+
+  void _showCashConfirmation(OrderModel order) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Pesanan Dibuat'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Pesanan Cash berhasil dibuat '
+                'dalam simulasi lokal.',
+              ),
+              const SizedBox(height: 12),
+              SelectableText('ID: ${order.orderId}'),
+              const SizedBox(height: 8),
+              Text('Status: ${order.statusLabel}'),
+              const SizedBox(height: 12),
+              const Text(
+                'Pembayaran dilakukan kepada tenant '
+                'saat pengambilan makanan. '
+                'Pesanan masih menunggu konfirmasi tenant.',
+              ),
+            ],
           ),
-        ),
-      );
-      return;
-    }
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PaymentProofPage(
-          cartItems: widget.cartItems,
-          paymentMethod: method,
-        ),
-      ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Mengerti'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -130,13 +186,21 @@ class _PaymentPageState extends State<PaymentPage> {
         ),
         const SizedBox(height: 8),
         const Text(
-          'Pilih salah satu metode pembayaran untuk pesananmu.',
+          'Pilih metode pembayaran untuk pesananmu.',
           style: TextStyle(color: Colors.black54),
         ),
         const SizedBox(height: 20),
         RadioGroup<PaymentMethod>(
           groupValue: selectedMethod,
           onChanged: (PaymentMethod? value) {
+            if (createdOrder != null) {
+              _showMessage(
+                'Metode pembayaran tidak bisa diubah '
+                'setelah pesanan dibuat.',
+              );
+              return;
+            }
+
             setState(() {
               selectedMethod = value;
             });
@@ -153,7 +217,7 @@ class _PaymentPageState extends State<PaymentPage> {
                 method: PaymentMethod.mobileBanking,
                 title: 'Mobile Banking',
                 description:
-                    'Transfer melalui mobile banking '
+                    'Transfer menggunakan mobile banking '
                     'dan lampirkan bukti pembayaran.',
                 icon: Icons.account_balance_outlined,
               ),
@@ -161,7 +225,7 @@ class _PaymentPageState extends State<PaymentPage> {
                 method: PaymentMethod.eWallet,
                 title: 'E-Wallet',
                 description:
-                    'Bayar menggunakan e-wallet '
+                    'Bayar dengan e-wallet '
                     'dan lampirkan bukti pembayaran.',
                 icon: Icons.account_balance_wallet_outlined,
               ),
@@ -173,6 +237,10 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Widget _buildBottomSummary() {
+    final bool isPaidProofSubmitted =
+        createdOrder?.status == OrderStatus.waitingConfirmation &&
+        createdOrder?.paymentMethod != PaymentMethod.cash;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
@@ -184,6 +252,18 @@ class _PaymentPageState extends State<PaymentPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (createdOrder != null) ...[
+              Text(
+                'Pesanan: ${createdOrder!.orderId}',
+                style: const TextStyle(fontSize: 12, color: Colors.black54),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Status: ${createdOrder!.statusLabel}',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+            ],
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -205,7 +285,9 @@ class _PaymentPageState extends State<PaymentPage> {
             SizedBox(
               height: 48,
               child: ElevatedButton(
-                onPressed: selectedMethod == null ? null : _continuePayment,
+                onPressed: selectedMethod == null || isPaidProofSubmitted
+                    ? null
+                    : _continuePayment,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryGreen,
                   foregroundColor: Colors.white,
@@ -214,9 +296,15 @@ class _PaymentPageState extends State<PaymentPage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text(
-                  'Lanjutkan Pembayaran',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                child: Text(
+                  createdOrder == null
+                      ? 'Buat Pesanan'
+                      : selectedMethod == PaymentMethod.cash
+                      ? 'Lihat Konfirmasi Pesanan'
+                      : isPaidProofSubmitted
+                      ? 'Bukti Sudah Dikonfirmasi'
+                      : 'Lanjut Upload Bukti',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -233,7 +321,7 @@ class _PaymentPageState extends State<PaymentPage> {
       appBar: AppBar(
         title: const Text(
           'Metode Pembayaran',
-          style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
         ),
         backgroundColor: backgroundColor,
         centerTitle: true,
