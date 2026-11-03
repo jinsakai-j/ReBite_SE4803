@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/cart_item_model.dart';
 import '../../models/order_model.dart';
 import '../../services/transaction_service.dart';
+import 'pickup_qr_page.dart';
 
 class OrderDetailPage extends StatelessWidget {
   final String orderId;
@@ -39,7 +40,6 @@ class OrderDetailPage extends StatelessWidget {
       case OrderStatus.waitingConfirmation:
         return Colors.blue.shade700;
       case OrderStatus.readyForPickup:
-        return primaryGreen;
       case OrderStatus.completed:
         return primaryGreen;
       case OrderStatus.cancelled:
@@ -69,25 +69,24 @@ class OrderDetailPage extends StatelessWidget {
   String _statusDescription(OrderModel order) {
     switch (order.status) {
       case OrderStatus.waitingPayment:
-        return 'Silakan selesaikan pembayaran digital '
+        return 'Selesaikan pembayaran digital '
             'dan lampirkan bukti pembayaran.';
       case OrderStatus.waitingConfirmation:
-        return 'Pesanan sedang menunggu konfirmasi tenant.';
+        return 'Pesanan menunggu konfirmasi tenant.';
       case OrderStatus.readyForPickup:
-        return 'Pesanan sudah siap. Silakan ambil makanan '
-            'di lokasi tenant.';
+        return 'Pesanan siap diambil. '
+            'Tunjukkan QR Code kepada tenant.';
       case OrderStatus.completed:
-        return 'Pesanan telah selesai dan makanan '
-            'sudah diambil.';
+        return 'Pesanan selesai dan makanan sudah diambil.';
       case OrderStatus.cancelled:
-        return 'Pesanan ini telah dibatalkan.';
+        return 'Pesanan telah dibatalkan.';
       case OrderStatus.late:
-        return 'Batas waktu pengambilan telah terlewati. '
+        return 'Waktu pengambilan telah terlewati. '
             'Hubungi tenant untuk tindak lanjut.';
     }
   }
 
-  Widget _buildCard({required Widget child}) {
+  Widget _buildCard(Widget child) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -117,8 +116,8 @@ class OrderDetailPage extends StatelessWidget {
               value,
               textAlign: TextAlign.end,
               style: const TextStyle(
-                color: textColor,
                 fontWeight: FontWeight.w600,
+                color: textColor,
               ),
             ),
           ),
@@ -131,7 +130,7 @@ class OrderDetailPage extends StatelessWidget {
     final Color statusColor = _statusColor(order.status);
 
     return _buildCard(
-      child: Column(
+      Column(
         children: [
           Icon(_statusIcon(order.status), size: 52, color: statusColor),
           const SizedBox(height: 12),
@@ -157,7 +156,7 @@ class OrderDetailPage extends StatelessWidget {
 
   Widget _buildOrderInfo(OrderModel order) {
     return _buildCard(
-      child: Column(
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
@@ -184,8 +183,6 @@ class OrderDetailPage extends StatelessWidget {
     required int price,
     required int quantity,
   }) {
-    final int subtotal = price * quantity;
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(
@@ -201,13 +198,13 @@ class OrderDetailPage extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   '$quantity x Rp${_formatPrice(price)}',
-                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  style: const TextStyle(color: Colors.black54, fontSize: 12),
                 ),
               ],
             ),
           ),
           Text(
-            'Rp${_formatPrice(subtotal)}',
+            'Rp${_formatPrice(price * quantity)}',
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ],
@@ -217,7 +214,7 @@ class OrderDetailPage extends StatelessWidget {
 
   Widget _buildProductsCard(OrderModel order) {
     return _buildCard(
-      child: Column(
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
@@ -238,29 +235,25 @@ class OrderDetailPage extends StatelessWidget {
                 quantity: item.quantity,
               )
           else
-            Text(
-              '${order.productName} (${order.quantity} porsi)',
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
+            Text('${order.productName} (${order.quantity} porsi)'),
 
           const Divider(),
           const SizedBox(height: 12),
 
           _buildInfoRow('Total Porsi', '${order.quantity} porsi'),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
                 'Total Pembayaran',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
               Text(
                 'Rp${_formatPrice(order.totalPrice)}',
                 style: const TextStyle(
-                  color: primaryGreen,
-                  fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                  color: primaryGreen,
                 ),
               ),
             ],
@@ -272,7 +265,7 @@ class OrderDetailPage extends StatelessWidget {
 
   Widget _buildPaymentCard(OrderModel order) {
     return _buildCard(
-      child: Column(
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
@@ -295,10 +288,9 @@ class OrderDetailPage extends StatelessWidget {
           ),
           if (order.paymentProofName != null)
             _buildInfoRow('Nama File', order.paymentProofName!),
-          const SizedBox(height: 4),
           const Text(
-            'Pembayaran dan verifikasi pada tahap ini '
-            'masih menggunakan simulasi data lokal.',
+            'Pembayaran masih disimulasikan '
+            'menggunakan data lokal.',
             style: TextStyle(color: Colors.black54, fontSize: 12),
           ),
         ],
@@ -312,13 +304,12 @@ class OrderDetailPage extends StatelessWidget {
 
     if (order == null) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Detail Pesanan'),
-          backgroundColor: backgroundColor,
-        ),
+        appBar: AppBar(title: const Text('Detail Pesanan')),
         body: const Center(child: Text('Pesanan tidak ditemukan.')),
       );
     }
+
+    final bool canShowQr = order.status == OrderStatus.readyForPickup;
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -340,6 +331,41 @@ class OrderDetailPage extends StatelessWidget {
           _buildProductsCard(order),
           const SizedBox(height: 16),
           _buildPaymentCard(order),
+          const SizedBox(height: 16),
+
+          if (canShowQr)
+            SizedBox(
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (context) =>
+                          PickupQrPage(orderId: order.orderId),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.qr_code),
+                label: const Text('Lihat QR Pengambilan'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryGreen,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            )
+          else if (order.status == OrderStatus.waitingPayment ||
+              order.status == OrderStatus.waitingConfirmation)
+            const Text(
+              'QR Code akan tersedia setelah tenant '
+              'mengonfirmasi pesanan.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.black54),
+            ),
+
           const SizedBox(height: 24),
         ],
       ),
