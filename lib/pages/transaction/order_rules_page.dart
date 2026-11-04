@@ -347,10 +347,8 @@ class _OrderRulesPageState extends State<OrderRulesPage> {
           const SizedBox(height: 16),
 
           const Text(
-            'Catatan: status dan stok pada halaman '
-            'ini merupakan simulasi lokal. '
-            'Tenggat diperiksa saat data diakses '
-            'atau selama halaman ini aktif.',
+            'Periksa status dan batas waktu pesanan '
+            'sebelum melakukan pembatalan.',
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.black54, fontSize: 12),
           ),

@@ -5,6 +5,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../models/order_model.dart';
 import '../../services/transaction_service.dart';
+import 'order_rules_page.dart';
 
 class TenantVerificationPage extends StatefulWidget {
   final String tenantId;
@@ -57,7 +58,10 @@ class _TenantVerificationPageState extends State<TenantVerificationPage> {
 
       setState(() {});
 
-      _showMessage('Bukti ditolak. Consumer perlu mengirim ulang.');
+      _showMessage(
+        'Bukti pembayaran ditolak. '
+        'Pelanggan perlu mengirim ulang.',
+      );
     } on StateError catch (error) {
       _showMessage(error.message);
     }
@@ -95,6 +99,38 @@ class _TenantVerificationPageState extends State<TenantVerificationPage> {
     _verifyQr(result);
   }
 
+  Future<void> _openRules(OrderModel order) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) => OrderRulesPage(
+          orderId: order.orderId,
+          actor: CancellationActor.tenant,
+          actorId: widget.tenantId,
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+
+    setState(() {});
+  }
+
+  Widget _buildProofPreview(Uint8List bytes) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.memory(
+        bytes,
+        height: 160,
+        width: double.infinity,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) {
+          return const Text('Bukti pembayaran tidak dapat ditampilkan.');
+        },
+      ),
+    );
+  }
+
   Widget _buildOrderCard(OrderModel order) {
     final bool canConfirm = order.status == OrderStatus.waitingConfirmation;
 
@@ -102,6 +138,8 @@ class _TenantVerificationPageState extends State<TenantVerificationPage> {
         canConfirm &&
         order.paymentMethod != PaymentMethod.cash &&
         order.hasPaymentProof;
+
+    final bool canOpenRules = !order.isFinalStatus;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -118,16 +156,22 @@ class _TenantVerificationPageState extends State<TenantVerificationPage> {
             order.productName,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
+
           const SizedBox(height: 8),
+
           SelectableText(
             'ID: ${order.orderId}',
             style: const TextStyle(fontSize: 12),
           ),
+
           const SizedBox(height: 6),
-          Text('Consumer: ${order.consumerId}'),
+
+          Text('Pelanggan: ${order.consumerId}'),
           Text('Metode: ${order.paymentMethodLabel}'),
           Text('Jumlah: ${order.quantity} porsi'),
+
           const SizedBox(height: 8),
+
           Text(
             'Status: ${order.statusLabel}',
             style: const TextStyle(
@@ -138,18 +182,24 @@ class _TenantVerificationPageState extends State<TenantVerificationPage> {
 
           if (order.hasPaymentProof) ...[
             const SizedBox(height: 12),
+
             const Text(
               'Bukti Pembayaran',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
+
             const SizedBox(height: 8),
+
             Text(order.paymentProofName ?? '-'),
+
             const SizedBox(height: 8),
+
             _buildProofPreview(order.paymentProofBytes!),
           ],
 
           if (canConfirm) ...[
             const SizedBox(height: 16),
+
             Row(
               children: [
                 Expanded(
@@ -162,8 +212,10 @@ class _TenantVerificationPageState extends State<TenantVerificationPage> {
                     child: const Text('Konfirmasi'),
                   ),
                 ),
+
                 if (canReject) ...[
                   const SizedBox(width: 8),
+
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => _rejectProof(order),
@@ -179,27 +231,26 @@ class _TenantVerificationPageState extends State<TenantVerificationPage> {
             const Padding(
               padding: EdgeInsets.only(top: 12),
               child: Text(
-                'Menunggu consumer mengambil makanan '
+                'Menunggu pelanggan mengambil makanan '
                 'dan menunjukkan QR Code.',
                 style: TextStyle(color: Colors.black54),
               ),
             ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildProofPreview(Uint8List bytes) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Image.memory(
-        bytes,
-        height: 160,
-        width: double.infinity,
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          return const Text('Bukti pembayaran tidak dapat ditampilkan.');
-        },
+          if (canOpenRules) ...[
+            const SizedBox(height: 12),
+
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _openRules(order),
+                icon: const Icon(Icons.rule_outlined),
+                label: const Text('Aturan & Pembatalan'),
+                style: OutlinedButton.styleFrom(foregroundColor: primaryGreen),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -219,12 +270,16 @@ class _TenantVerificationPageState extends State<TenantVerificationPage> {
             'Verifikasi Pengambilan',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
+
           const SizedBox(height: 8),
+
           const Text(
-            'Scan QR consumer atau masukkan teks QR '
-            'untuk pengujian frontend.',
+            'Pindai QR Code pelanggan atau masukkan '
+            'kode pengambilan untuk verifikasi pesanan.',
           ),
+
           const SizedBox(height: 16),
+
           ElevatedButton.icon(
             onPressed: _openScanner,
             icon: const Icon(Icons.qr_code_scanner),
@@ -234,19 +289,23 @@ class _TenantVerificationPageState extends State<TenantVerificationPage> {
               foregroundColor: Colors.white,
             ),
           ),
+
           const SizedBox(height: 16),
+
           TextField(
             controller: _qrController,
             decoration: const InputDecoration(
-              labelText: 'Data QR untuk simulasi',
-              hintText: 'REBITE|PICKUP|...|TNT001',
+              labelText: 'Kode Pengambilan',
+              hintText: 'Masukkan kode dari QR pelanggan',
               border: OutlineInputBorder(),
             ),
           ),
+
           const SizedBox(height: 8),
+
           OutlinedButton(
             onPressed: () => _verifyQr(_qrController.text),
-            child: const Text('Verifikasi Data QR'),
+            child: const Text('Verifikasi Kode Pengambilan'),
           ),
         ],
       ),
@@ -273,13 +332,18 @@ class _TenantVerificationPageState extends State<TenantVerificationPage> {
             'Tenant: ${widget.tenantId}',
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
+
           const SizedBox(height: 16),
+
           _buildScannerSection(),
+
           const SizedBox(height: 24),
+
           const Text(
             'Daftar Pesanan',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
+
           const SizedBox(height: 12),
 
           if (orders.isEmpty)
@@ -329,7 +393,7 @@ class _QrScannerPageState extends State<_QrScannerPage> {
             padding: EdgeInsets.all(16),
             child: Text(
               'Arahkan kamera ke QR Code yang '
-              'ditampilkan oleh consumer.',
+              'ditampilkan oleh pelanggan.',
               textAlign: TextAlign.center,
             ),
           ),

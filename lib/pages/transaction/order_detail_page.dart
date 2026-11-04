@@ -3,13 +3,19 @@ import 'package:flutter/material.dart';
 import '../../models/cart_item_model.dart';
 import '../../models/order_model.dart';
 import '../../services/transaction_service.dart';
+import 'order_rules_page.dart';
 import 'pickup_qr_page.dart';
 
-class OrderDetailPage extends StatelessWidget {
+class OrderDetailPage extends StatefulWidget {
   final String orderId;
 
   const OrderDetailPage({super.key, required this.orderId});
 
+  @override
+  State<OrderDetailPage> createState() => _OrderDetailPageState();
+}
+
+class _OrderDetailPageState extends State<OrderDetailPage> {
   static const Color primaryGreen = Color(0xFF176B45);
   static const Color backgroundColor = Color(0xFFF7FAF7);
   static const Color textColor = Color(0xFF242B26);
@@ -72,16 +78,16 @@ class OrderDetailPage extends StatelessWidget {
         return 'Selesaikan pembayaran digital '
             'dan lampirkan bukti pembayaran.';
       case OrderStatus.waitingConfirmation:
-        return 'Pesanan menunggu konfirmasi tenant.';
+        return 'Pesanan sedang menunggu konfirmasi tenant.';
       case OrderStatus.readyForPickup:
         return 'Pesanan siap diambil. '
             'Tunjukkan QR Code kepada tenant.';
       case OrderStatus.completed:
-        return 'Pesanan selesai dan makanan sudah diambil.';
+        return 'Pesanan telah selesai dan makanan sudah diambil.';
       case OrderStatus.cancelled:
-        return 'Pesanan telah dibatalkan.';
+        return 'Pesanan ini telah dibatalkan.';
       case OrderStatus.late:
-        return 'Waktu pengambilan telah terlewati. '
+        return 'Batas waktu pengambilan telah terlewati. '
             'Hubungi tenant untuk tindak lanjut.';
     }
   }
@@ -226,7 +232,6 @@ class OrderDetailPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-
           if (order.items.isNotEmpty)
             for (final CartItemModel item in order.items)
               _buildItemRow(
@@ -236,10 +241,8 @@ class OrderDetailPage extends StatelessWidget {
               )
           else
             Text('${order.productName} (${order.quantity} porsi)'),
-
           const Divider(),
           const SizedBox(height: 12),
-
           _buildInfoRow('Total Porsi', '${order.quantity} porsi'),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -252,8 +255,8 @@ class OrderDetailPage extends StatelessWidget {
                 'Rp${_formatPrice(order.totalPrice)}',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 20,
                   color: primaryGreen,
+                  fontSize: 20,
                 ),
               ),
             ],
@@ -289,8 +292,7 @@ class OrderDetailPage extends StatelessWidget {
           if (order.paymentProofName != null)
             _buildInfoRow('Nama File', order.paymentProofName!),
           const Text(
-            'Pembayaran masih disimulasikan '
-            'menggunakan data lokal.',
+            'Konfirmasi pembayaran dilakukan oleh tenant.',
             style: TextStyle(color: Colors.black54, fontSize: 12),
           ),
         ],
@@ -298,9 +300,41 @@ class OrderDetailPage extends StatelessWidget {
     );
   }
 
+  Future<void> _openQr(OrderModel order) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) => PickupQrPage(orderId: order.orderId),
+      ),
+    );
+
+    if (!mounted) return;
+
+    setState(() {});
+  }
+
+  Future<void> _openOrderRules(OrderModel order) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) => OrderRulesPage(
+          orderId: order.orderId,
+          actor: CancellationActor.consumer,
+          actorId: order.consumerId,
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
-    final OrderModel? order = TransactionService.instance.findOrder(orderId);
+    final OrderModel? order = TransactionService.instance.findOrder(
+      widget.orderId,
+    );
 
     if (order == null) {
       return Scaffold(
@@ -337,34 +371,35 @@ class OrderDetailPage extends StatelessWidget {
             SizedBox(
               height: 48,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (context) =>
-                          PickupQrPage(orderId: order.orderId),
-                    ),
-                  );
-                },
+                onPressed: () => _openQr(order),
                 icon: const Icon(Icons.qr_code),
                 label: const Text('Lihat QR Pengambilan'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryGreen,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
                 ),
               ),
             )
           else if (order.status == OrderStatus.waitingPayment ||
               order.status == OrderStatus.waitingConfirmation)
             const Text(
-              'QR Code akan tersedia setelah tenant '
-              'mengonfirmasi pesanan.',
+              'QR Code akan tersedia setelah '
+              'tenant mengonfirmasi pesanan.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.black54),
             ),
+
+          const SizedBox(height: 12),
+
+          SizedBox(
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: () => _openOrderRules(order),
+              icon: const Icon(Icons.rule_outlined),
+              label: const Text('Aturan & Status Transaksi'),
+              style: OutlinedButton.styleFrom(foregroundColor: primaryGreen),
+            ),
+          ),
 
           const SizedBox(height: 24),
         ],

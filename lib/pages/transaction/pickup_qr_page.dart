@@ -124,6 +124,7 @@ class PickupQrPage extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 20),
+
                 SelectableText(
                   order.orderId,
                   textAlign: TextAlign.center,
@@ -132,6 +133,7 @@ class PickupQrPage extends StatelessWidget {
                     fontSize: 14,
                   ),
                 ),
+
                 const SizedBox(height: 20),
                 const Divider(),
                 const SizedBox(height: 12),
@@ -142,12 +144,13 @@ class PickupQrPage extends StatelessWidget {
               ],
             ),
           ),
+
           const SizedBox(height: 16),
+
           const Text(
-            'QR Code ini hanya untuk simulasi frontend. '
-            'Verifikasi tenant dan pencegahan penggunaan '
-            'ulang akan dikerjakan pada Commit 12. '
-            'QR ini belum aman untuk transaksi nyata.',
+            'Pastikan QR Code terlihat jelas saat '
+            'ditunjukkan kepada tenant. '
+            'Setiap pesanan hanya dapat diverifikasi satu kali.',
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.black54, fontSize: 12),
           ),
