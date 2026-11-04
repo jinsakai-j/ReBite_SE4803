@@ -1,6 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import 'register_success_screen.dart';
 
 class RegisterPasswordScreen extends StatefulWidget {
   final String fullName;
@@ -13,12 +14,10 @@ class RegisterPasswordScreen extends StatefulWidget {
   });
 
   @override
-  State<RegisterPasswordScreen> createState() =>
-      _RegisterPasswordScreenState();
+  State<RegisterPasswordScreen> createState() => _RegisterPasswordScreenState();
 }
 
-class _RegisterPasswordScreenState
-    extends State<RegisterPasswordScreen> {
+class _RegisterPasswordScreenState extends State<RegisterPasswordScreen> {
   String password = '';
   String confirmPassword = '';
 
@@ -49,25 +48,21 @@ class _RegisterPasswordScreenState
       hasMinimumLength = password.length >= 8;
       hasLetterAndNumber = hasLetter && hasNumber;
       hasNoSpace = !password.contains(' ');
-      passwordMatch = password == confirmPassword &&
-          confirmPassword.isNotEmpty;
+      passwordMatch = password == confirmPassword && confirmPassword.isNotEmpty;
     });
   }
 
   void checkConfirmPassword(String value) {
     setState(() {
       confirmPassword = value;
-      passwordMatch = password == confirmPassword &&
-          confirmPassword.isNotEmpty;
+      passwordMatch = password == confirmPassword && confirmPassword.isNotEmpty;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    bool isPasswordValid = hasMinimumLength &&
-        hasLetterAndNumber &&
-        hasNoSpace &&
-        passwordMatch;
+    bool isPasswordValid =
+        hasMinimumLength && hasLetterAndNumber && hasNoSpace && passwordMatch;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -168,25 +163,16 @@ class _RegisterPasswordScreenState
 
                 const SizedBox(height: 12),
 
-                passwordRequirement(
-                  'Minimal 8 karakter',
-                  hasMinimumLength,
-                ),
+                passwordRequirement('Minimal 8 karakter', hasMinimumLength),
 
                 passwordRequirement(
                   'Mengandung huruf dan angka',
                   hasLetterAndNumber,
                 ),
 
-                passwordRequirement(
-                  'Tidak mengandung spasi',
-                  hasNoSpace,
-                ),
+                passwordRequirement('Tidak mengandung spasi', hasNoSpace),
 
-                passwordRequirement(
-                  'Password harus sama',
-                  passwordMatch,
-                ),
+                passwordRequirement('Password harus sama', passwordMatch),
 
                 const SizedBox(height: 30),
 
@@ -196,11 +182,11 @@ class _RegisterPasswordScreenState
                   child: ElevatedButton(
                     onPressed: isPasswordValid
                         ? () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Password berhasil divalidasi!',
-                                ),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const RegisterSuccessScreen(),
                               ),
                             );
                           }
@@ -224,9 +210,7 @@ class _RegisterPasswordScreenState
           Icon(
             isValid ? Icons.check_circle : Icons.circle_outlined,
             size: 18,
-            color: isValid
-                ? const Color(0xFF27AE60)
-                : Colors.grey,
+            color: isValid ? const Color(0xFF27AE60) : Colors.grey,
           ),
           const SizedBox(width: 10),
           Text(
