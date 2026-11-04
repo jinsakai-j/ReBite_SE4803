@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import 'theme/app_theme.dart';
+import 'pages/tenant_dashboard_screen.dart';
 
 void main() {
   runApp(const ReBiteApp());
@@ -14,11 +16,7 @@ class ReBiteApp extends StatelessWidget {
       title: 'ReBite',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const Scaffold(
-        body: Center(
-          child: Text('ReBite'),
-        ),
-      ),
+      home: const TenantDashboardScreen(),
     );
   }
 }

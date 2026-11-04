@@ -211,6 +211,43 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 color: Color(0xFF242B26),
               ),
             ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _stockController,
+              decoration: InputDecoration(
+                hintText: 'Contoh: 10 porsi',
+                filled: true,
+                fillColor: const Color(0xFFFFFFFF),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFFD9E3DC)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFFD9E3DC)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: _saveProduct,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF176B45),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Simpan Produk',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
           ],
         ),
       ),
