@@ -153,6 +153,101 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 ),
               ),
             ),
+            const SizedBox(height: 24),
+            const Text(
+              'Nama Produk',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF242B26),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                hintText: 'Masukkan nama produk',
+                filled: true,
+                fillColor: const Color(0xFFFFFFFF),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFFD9E3DC)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFFD9E3DC)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Harga',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF242B26),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _priceController,
+              decoration: InputDecoration(
+                hintText: 'Contoh: Rp 20.000',
+                filled: true,
+                fillColor: const Color(0xFFFFFFFF),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFFD9E3DC)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFFD9E3DC)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Stok',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF242B26),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _stockController,
+              decoration: InputDecoration(
+                hintText: 'Contoh: 10 porsi',
+                filled: true,
+                fillColor: const Color(0xFFFFFFFF),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFFD9E3DC)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFFD9E3DC)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: _saveProduct,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF176B45),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Simpan Produk',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
           ],
         ),
       ),
