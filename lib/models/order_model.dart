@@ -13,6 +13,8 @@ enum OrderStatus {
 
 enum PaymentMethod { cash, mobileBanking, eWallet }
 
+enum CancellationActor { consumer, tenant, system }
+
 class OrderModel {
   final String orderId;
   final String consumerId;
@@ -30,6 +32,11 @@ class OrderModel {
   String? paymentProofName;
   Uint8List? paymentProofBytes;
 
+  DateTime? readyForPickupAt;
+  DateTime? cancelledAt;
+  DateTime? completedAt;
+  String? cancellationReason;
+
   OrderModel({
     required this.orderId,
     required this.consumerId,
@@ -43,10 +50,33 @@ class OrderModel {
     this.status = OrderStatus.waitingPayment,
     this.paymentProofName,
     this.paymentProofBytes,
+    this.readyForPickupAt,
+    this.cancelledAt,
+    this.completedAt,
+    this.cancellationReason,
   });
 
   bool get hasPaymentProof =>
       paymentProofName != null && paymentProofBytes != null;
+
+  DateTime? get paymentDeadline {
+    if (paymentMethod == PaymentMethod.cash) {
+      return null;
+    }
+
+    return createdAt.add(const Duration(minutes: 15));
+  }
+
+  DateTime? get pickupDeadline {
+    if (readyForPickupAt == null) {
+      return null;
+    }
+
+    return readyForPickupAt!.add(const Duration(minutes: 60));
+  }
+
+  bool get isFinalStatus =>
+      status == OrderStatus.completed || status == OrderStatus.cancelled;
 
   String get statusLabel {
     switch (status) {

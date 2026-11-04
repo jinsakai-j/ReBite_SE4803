@@ -11,24 +11,36 @@ class TransactionService {
   final List<OrderModel> _orders = [];
   final Map<String, int> _remainingStocks = {};
 
+  final Set<String> _refundedOrderIds = {};
+
   int _orderSequence = 0;
 
-  List<OrderModel> get orders => List<OrderModel>.unmodifiable(_orders);
+  List<OrderModel> get orders {
+    refreshDeadlines();
+    return List<OrderModel>.unmodifiable(_orders);
+  }
 
   OrderModel? findOrder(String orderId) {
+    refreshDeadlines();
+
     for (final order in _orders) {
       if (order.orderId == orderId) {
         return order;
       }
     }
+
     return null;
   }
 
   List<OrderModel> ordersForTenant(String tenantId) {
+    refreshDeadlines();
+
     return _orders.where((order) => order.tenantId == tenantId).toList();
   }
 
   int remainingStock(CartItemModel item) {
+    refreshDeadlines();
+
     return _remainingStocks[item.productId] ?? item.stock;
   }
 
@@ -37,6 +49,8 @@ class TransactionService {
     required List<CartItemModel> cartItems,
     required PaymentMethod paymentMethod,
   }) {
+    refreshDeadlines();
+
     if (consumerId.trim().isEmpty) {
       throw StateError('ID consumer tidak boleh kosong.');
     }
@@ -59,8 +73,8 @@ class TransactionService {
 
       if (item.tenantId != tenantId) {
         throw StateError(
-          'Satu pesanan hanya boleh berisi produk '
-          'dari tenant yang sama.',
+          'Satu pesanan hanya boleh berisi '
+          'produk dari tenant yang sama.',
         );
       }
 
@@ -68,7 +82,9 @@ class TransactionService {
         throw StateError('Produk yang sama tidak boleh tercatat dua kali.');
       }
 
-      if (item.quantity > remainingStock(item)) {
+      final int available = _remainingStocks[item.productId] ?? item.stock;
+
+      if (item.quantity > available) {
         throw StateError('Stok ${item.productName} tidak mencukupi.');
       }
     }
@@ -118,7 +134,9 @@ class TransactionService {
     );
 
     for (final item in orderItems) {
-      _remainingStocks[item.productId] = remainingStock(item) - item.quantity;
+      final int available = _remainingStocks[item.productId] ?? item.stock;
+
+      _remainingStocks[item.productId] = available - item.quantity;
     }
 
     _orders.add(newOrder);
@@ -134,14 +152,11 @@ class TransactionService {
     final OrderModel order = _requireOrder(orderId);
 
     if (order.paymentMethod == PaymentMethod.cash) {
-      throw StateError('Pembayaran Cash tidak membutuhkan bukti transfer.');
+      throw StateError('Cash tidak membutuhkan bukti transfer.');
     }
 
     if (order.status != OrderStatus.waitingPayment) {
-      throw StateError(
-        'Bukti pembayaran tidak dapat dikirim '
-        'untuk status pesanan ini.',
-      );
+      throw StateError('Pesanan tidak sedang menunggu pembayaran.');
     }
 
     if (fileName.trim().isEmpty || proofBytes.isEmpty) {
@@ -169,10 +184,11 @@ class TransactionService {
     }
 
     if (order.paymentMethod != PaymentMethod.cash && !order.hasPaymentProof) {
-      throw StateError('Bukti pembayaran digital belum tersedia.');
+      throw StateError('Bukti pembayaran belum tersedia.');
     }
 
     order.status = OrderStatus.readyForPickup;
+    order.readyForPickupAt = DateTime.now();
 
     return order;
   }
@@ -199,6 +215,8 @@ class TransactionService {
     order.paymentProofBytes = null;
     order.status = OrderStatus.waitingPayment;
 
+    refreshDeadlines();
+
     return order;
   }
 
@@ -224,7 +242,7 @@ class TransactionService {
     final String qrTenantId = parts[3];
 
     if (qrTenantId != tenantId) {
-      throw StateError('QR Code bukan milik tenant yang sedang login.');
+      throw StateError('QR Code bukan milik tenant ini.');
     }
 
     final OrderModel order = _requireTenantOrder(
@@ -237,7 +255,7 @@ class TransactionService {
     }
 
     if (order.status == OrderStatus.completed) {
-      throw StateError('QR Code sudah digunakan. Pesanan telah selesai.');
+      throw StateError('QR Code sudah digunakan.');
     }
 
     if (order.status != OrderStatus.readyForPickup &&
@@ -246,8 +264,121 @@ class TransactionService {
     }
 
     order.status = OrderStatus.completed;
+    order.completedAt = DateTime.now();
 
     return order;
+  }
+
+  void refreshDeadlines({DateTime? now}) {
+    final DateTime currentTime = now ?? DateTime.now();
+
+    for (final order in _orders) {
+      if (order.status == OrderStatus.waitingPayment &&
+          order.paymentMethod != PaymentMethod.cash) {
+        final DateTime? deadline = order.paymentDeadline;
+
+        if (deadline != null && !currentTime.isBefore(deadline)) {
+          _cancelInternal(
+            order,
+            reason: 'Batas pembayaran 15 menit terlewati.',
+            now: currentTime,
+            stockStillSellable: true,
+          );
+        }
+      }
+
+      if (order.status == OrderStatus.readyForPickup) {
+        final DateTime? deadline = order.pickupDeadline;
+
+        if (deadline != null && !currentTime.isBefore(deadline)) {
+          order.status = OrderStatus.late;
+        }
+      }
+    }
+  }
+
+  OrderModel cancelOrder({
+    required String orderId,
+    required CancellationActor actor,
+    required String actorId,
+    required bool stockStillSellable,
+    String reason = 'Pesanan dibatalkan.',
+  }) {
+    final OrderModel order = _requireOrder(orderId);
+
+    if (actorId.trim().isEmpty) {
+      throw StateError('ID pengguna tidak valid.');
+    }
+
+    if (actor == CancellationActor.system) {
+      throw StateError('Pembatalan sistem tidak dapat dipanggil dari UI.');
+    }
+
+    if (order.isFinalStatus) {
+      throw StateError(
+        'Pesanan selesai atau dibatalkan '
+        'tidak dapat dibatalkan kembali.',
+      );
+    }
+
+    if (actor == CancellationActor.consumer) {
+      if (actorId != order.consumerId) {
+        throw StateError('Consumer tidak memiliki akses ke pesanan ini.');
+      }
+
+      if (order.status != OrderStatus.waitingPayment &&
+          order.status != OrderStatus.waitingConfirmation) {
+        throw StateError(
+          'Pesanan sudah dikonfirmasi tenant '
+          'dan tidak dapat dibatalkan oleh consumer.',
+        );
+      }
+    } else if (actor == CancellationActor.tenant) {
+      if (actorId != order.tenantId) {
+        throw StateError('Tenant tidak memiliki akses ke pesanan ini.');
+      }
+
+      if (order.status != OrderStatus.waitingPayment &&
+          order.status != OrderStatus.waitingConfirmation &&
+          order.status != OrderStatus.late) {
+        throw StateError(
+          'Pesanan tidak dapat dibatalkan '
+          'dalam status saat ini.',
+        );
+      }
+    }
+
+    _cancelInternal(
+      order,
+      reason: reason,
+      now: DateTime.now(),
+      stockStillSellable: stockStillSellable,
+    );
+
+    return order;
+  }
+
+  void _cancelInternal(
+    OrderModel order, {
+    required String reason,
+    required DateTime now,
+    required bool stockStillSellable,
+  }) {
+    if (order.isFinalStatus) return;
+
+    order.status = OrderStatus.cancelled;
+    order.cancelledAt = now;
+    order.cancellationReason = reason;
+
+    if (stockStillSellable && !_refundedOrderIds.contains(order.orderId)) {
+      for (final item in order.items) {
+        final int current = _remainingStocks[item.productId] ?? item.stock;
+
+        _remainingStocks[item.productId] = current + item.quantity;
+      }
+
+      _refundedOrderIds.add(order.orderId);
+    }
   }
 
   OrderModel _requireOrder(String orderId) {
