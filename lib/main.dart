@@ -21,13 +21,13 @@ class ReBiteApp extends StatelessWidget {
       title: 'ReBite',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const TenantDashboardScreen(),
       initialRoute: AppRoutes.splash,
       routes: {
         AppRoutes.splash: (context) => const SplashScreen(),
         AppRoutes.welcome: (context) => const WelcomeScreen(),
-        AppRoutes.login:(context) => const LoginScreen(),
-        AppRoutes.register:(context) => const RegisterScreen(),
+        AppRoutes.login: (context) => const LoginScreen(),
+        AppRoutes.register: (context) => const RegisterScreen(),
+        '/tenant-dashboard': (context) => const TenantDashboardScreen(),
       },
     );
   }
