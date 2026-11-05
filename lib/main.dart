@@ -1,7 +1,8 @@
+
 import 'package:flutter/material.dart';
+import 'package:rebite_mobile/pages/home_pages.dart';
 
 import 'theme/app_theme.dart';
-import 'pages/tenant_dashboard_screen.dart';
 import 'routes/app_routes.dart';
 import 'pages/welcome_screen.dart';
 import 'pages/splash_screen.dart';
@@ -21,13 +22,13 @@ class ReBiteApp extends StatelessWidget {
       title: 'ReBite',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const TenantDashboardScreen(),
       initialRoute: AppRoutes.splash,
       routes: {
         AppRoutes.splash: (context) => const SplashScreen(),
         AppRoutes.welcome: (context) => const WelcomeScreen(),
-        AppRoutes.login:(context) => const LoginScreen(),
-        AppRoutes.register:(context) => const RegisterScreen(),
+        AppRoutes.login: (context) => const LoginScreen(),
+        AppRoutes.register: (context) => const RegisterScreen(),
+        '/home': (context) => const HomePage(),
       },
     );
   }
