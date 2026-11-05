@@ -1,13 +1,12 @@
-import 'package:flutter/material.dart';
-
-import '../models/product_model.dart';
-
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
+
+import '../models/product_model.dart';
 
 class ProductFormScreen extends StatefulWidget {
   final Product? product;
@@ -21,25 +20,27 @@ class ProductFormScreen extends StatefulWidget {
 class _ProductFormScreenState extends State<ProductFormScreen> {
   late TextEditingController _nameController;
   late TextEditingController _priceController;
-  late TextEditingController _stockController;
   late TextEditingController _originalPriceController;
-
-  String _selectedCategory = 'Makanan';
+  late TextEditingController _stockController;
   String _selectedImagePath = '';
-
+  String _selectedCategory = 'Makanan';
   final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
+
     _nameController = TextEditingController(text: widget.product?.name ?? '');
+
     _priceController = TextEditingController(text: widget.product?.price ?? '');
-    _stockController = TextEditingController(text: widget.product?.stock ?? '');
     _originalPriceController = TextEditingController(
       text: widget.product?.originalPrice.isNotEmpty == true
           ? widget.product!.originalPrice
           : widget.product?.price ?? '',
     );
+
+    _stockController = TextEditingController(text: widget.product?.stock ?? '');
+
     if (widget.product != null) {
       _selectedImagePath = widget.product!.imagePath;
       _selectedCategory = widget.product!.category;
@@ -50,8 +51,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   void dispose() {
     _nameController.dispose();
     _priceController.dispose();
-    _stockController.dispose();
+
     _originalPriceController.dispose();
+
+    _stockController.dispose();
     super.dispose();
   }
 
@@ -136,6 +139,49 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     }
 
     return image.path;
+  }
+
+  Widget _imagePreview() {
+    if (_selectedImagePath.isEmpty) {
+      return Container(
+        width: 120,
+        height: 120,
+        color: const Color(0xFFE6F2E9),
+        child: const Icon(
+          Icons.add_a_photo_outlined,
+          size: 36,
+          color: Color(0xFF176B45),
+        ),
+      );
+    }
+    if (_selectedImagePath.startsWith('http')) {
+      return Image.network(
+        _selectedImagePath,
+        width: 120,
+        height: 120,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => _imagePlaceholder(),
+      );
+    }
+
+    if (_selectedImagePath.startsWith('data:image/')) {
+      return Image.memory(
+        base64Decode(_selectedImagePath.split(',').last),
+        width: 120,
+        height: 120,
+        fit: BoxFit.cover,
+      );
+    }
+
+    if (kIsWeb) return _imagePlaceholder();
+
+    return Image.file(
+      File(_selectedImagePath),
+      width: 120,
+      height: 120,
+      fit: BoxFit.cover,
+      errorBuilder: (_, _, _) => _imagePlaceholder(),
+    );
   }
 
   Widget _imagePlaceholder() => Container(
@@ -244,7 +290,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 ),
               ),
             ),
+
             const SizedBox(height: 24),
+
             const Text(
               'Nama Produk',
               style: TextStyle(
@@ -252,7 +300,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 color: Color(0xFF242B26),
               ),
             ),
+
             const SizedBox(height: 8),
+
             TextField(
               controller: _nameController,
               decoration: InputDecoration(
@@ -269,9 +319,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 ),
               ),
             ),
+
             const SizedBox(height: 16),
+
             DropdownButtonFormField<String>(
-              initialValue: _selectedCategory,
+              value: _selectedCategory,
               decoration: const InputDecoration(labelText: 'Kategori'),
               items: const [
                 DropdownMenuItem(value: 'Makanan', child: Text('Makanan')),
@@ -284,6 +336,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 }
               },
             ),
+
+            const SizedBox(height: 16),
+
             const Text(
               'Harga Awal',
               style: TextStyle(
@@ -309,11 +364,26 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 ),
               ),
             ),
+
+            const SizedBox(height: 16),
+
+            const Text(
+              'Harga Diskon',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF242B26),
+              ),
+            ),
+
             const SizedBox(height: 8),
+
             TextField(
               controller: _priceController,
+              keyboardType: TextInputType.number,
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                hintText: 'Contoh: Rp 20.000',
+                hintText: 'Harga setelah diskon',
+                prefixText: 'Rp ',
                 filled: true,
                 fillColor: const Color(0xFFFFFFFF),
                 border: OutlineInputBorder(
@@ -326,7 +396,19 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 ),
               ),
             ),
+
+            const SizedBox(height: 8),
+
+            Text(
+              'Diskon: $_discountPercentage%',
+              style: const TextStyle(
+                color: Color(0xFF176B45),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
             const SizedBox(height: 16),
+
             const Text(
               'Stok',
               style: TextStyle(
@@ -334,7 +416,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 color: Color(0xFF242B26),
               ),
             ),
+
             const SizedBox(height: 8),
+
             TextField(
               controller: _stockController,
               decoration: InputDecoration(
@@ -351,7 +435,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 ),
               ),
             ),
+
             const SizedBox(height: 32),
+
             SizedBox(
               width: double.infinity,
               height: 48,
