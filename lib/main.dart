@@ -28,10 +28,13 @@ class ReBiteApp extends StatelessWidget {
         AppRoutes.welcome: (context) => const WelcomeScreen(),
         AppRoutes.login: (context) => const LoginScreen(),
         AppRoutes.register: (context) => const RegisterScreen(),
-feature/tenant-management
+
+
+
         '/tenant-dashboard': (context) => const TenantDashboardScreen(),
 
         '/home': (context) => const HomePage(),
+ main
  main
       },
     );

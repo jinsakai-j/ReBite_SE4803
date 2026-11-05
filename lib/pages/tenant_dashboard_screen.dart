@@ -1,6 +1,14 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
+import 'smart_features/smart_features_page.dart';
+
+import 'package:flutter/foundation.dart';
+
 import '../models/product_model.dart';
+import '../data/shared_product_catalog.dart';
 import 'product_form_screen.dart';
 
 class TenantDashboardScreen extends StatefulWidget {
@@ -11,20 +19,7 @@ class TenantDashboardScreen extends StatefulWidget {
 }
 
 class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
-  final List<Product> products = [
-    Product(
-      name: 'Salad fresh',
-      price: 'Rp 10.000',
-      stock: '5 porsi',
-      imagePath: '',
-    ),
-    Product(
-      name: 'Nasi bakar',
-      price: 'Rp 15.000',
-      stock: '5 porsi',
-      imagePath: '',
-    ),
-  ];
+  List<Product> get products => SharedProductCatalog.tenantProducts;
 
   void _navigateToForm({Product? product, int? index}) async {
     final result = await Navigator.push(
@@ -36,25 +31,21 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
 
     if (result != null && result is Product) {
       setState(() {
-        if (index != null) {
-          products[index] = result;
-        } else {
-          products.add(result);
-        }
+        SharedProductCatalog.save(index ?? products.length, result);
       });
     }
   }
 
   void _deleteProduct(int index) {
     setState(() {
-      products.removeAt(index);
+      SharedProductCatalog.delete(index);
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF7),
+      backgroundColor: const Color(0xFFF7FAF7), // Sesuai ketentuan background
       appBar: AppBar(
         title: const Text(
           'Tenant Dashboard',
@@ -68,12 +59,44 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
         elevation: 0,
         centerTitle: true,
         iconTheme: const IconThemeData(color: Color(0xFF242B26)),
+        actions: [
+          IconButton(
+            tooltip: 'Smart Features',
+            icon: const Icon(Icons.insights_outlined),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => const SmartFeaturesPage(),
+              ),
+            ),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Text(
+              'Halo, Selamat Datang! 👋',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF242B26),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Row(
+              children: [
+                Icon(Icons.location_on, color: Color(0xFF176B45), size: 18),
+                SizedBox(width: 5),
+                Text(
+                  'Bojongsoang, Bandung',
+                  style: TextStyle(color: Color(0xFF647067), fontSize: 13),
+                ),
+              ],
+            ),
+            const SizedBox(height: 22),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -109,7 +132,9 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                   ElevatedButton.icon(
                     onPressed: () => _navigateToForm(),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF176B45),
+                      backgroundColor: const Color(
+                        0xFF176B45,
+                      ), // Sesuai ketentuan primary green
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -146,60 +171,101 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFFD9E3DC)),
                   ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(12),
-                    leading: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        product.imagePath,
-                        width: 55,
-                        height: 55,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          width: 55,
-                          height: 55,
-                          color: Colors.grey.shade200,
-                          child: const Icon(Icons.image, color: Colors.grey),
-                        ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(12),
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: product.imagePath.startsWith('data:image/')
+                            ? Image.memory(
+                                base64Decode(product.imagePath.split(',').last),
+                                width: 55,
+                                height: 55,
+                                fit: BoxFit.cover,
+                              )
+                            : product.imagePath.startsWith('http')
+                            ? Image.network(
+                                product.imagePath,
+                                width: 55,
+                                height: 55,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                      width: 55,
+                                      height: 55,
+                                      color: Colors.grey.shade200,
+                                      child: const Icon(
+                                        Icons.image,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                              )
+                            : product.imagePath.isNotEmpty && !kIsWeb
+                            ? Image.file(
+                                File(product.imagePath),
+                                width: 55,
+                                height: 55,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                      width: 55,
+                                      height: 55,
+                                      color: Colors.grey.shade200,
+                                      child: const Icon(
+                                        Icons.image,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                              )
+                            : Container(
+                                width: 55,
+                                height: 55,
+                                color: Colors.grey.shade200,
+                                child: const Icon(
+                                  Icons.image,
+                                  color: Colors.grey,
+                                ),
+                              ),
                       ),
-                    ),
-                    title: Text(
-                      product.name,
-                      style: const TextStyle(
-                        color: Color(0xFF242B26),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Text(
-                        '${product.price}  •  Stok: ${product.stock}',
+                      title: Text(
+                        product.name,
                         style: const TextStyle(
-                          color: Color(0xFF718076),
-                          fontSize: 13,
+                          color: Color(0xFF242B26),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
                         ),
                       ),
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(
-                            Icons.edit_outlined,
-                            color: Color(0xFF176B45),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Text(
+                          '${product.price}  •  Stok: ${product.stock}',
+                          style: const TextStyle(
+                            color: Color(0xFF718076),
+                            fontSize: 13,
                           ),
-                          onPressed: () =>
-                              _navigateToForm(product: product, index: index),
                         ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.delete_outline,
-                            color: Colors.redAccent,
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.edit_outlined,
+                              color: Color(0xFF176B45),
+                            ),
+                            onPressed: () =>
+                                _navigateToForm(product: product, index: index),
                           ),
-                          onPressed: () => _deleteProduct(index),
-                        ),
-                      ],
+                          IconButton(
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.redAccent,
+                            ),
+                            onPressed: () => _deleteProduct(index),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
