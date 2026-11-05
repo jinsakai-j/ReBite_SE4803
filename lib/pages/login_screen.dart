@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../pages/home_pages.dart';
+import 'main_navigation_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,8 +11,46 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  String _selectedRole = 'Pembeli';
   bool _isPasswordVisible = false;
   bool _rememberMe = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _login() {
+    final email = _emailController.text.trim().toLowerCase();
+    final password = _passwordController.text;
+    final isBuyer = _selectedRole == 'Pembeli' &&
+        email == 'pembeli@rebite.com' &&
+        password == 'user12345';
+    final isTenant = _selectedRole == 'Penjual' &&
+        email == 'tenant@rebite.com' &&
+        password == 'tenant12345';
+
+    if (!isBuyer && !isTenant) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Email, password, atau role tidak sesuai.'),
+        ),
+      );
+      return;
+    }
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => MainNavigationScreen(isTenant: isTenant),
+      ),
+      (route) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +123,36 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 24),
+
+                Text(
+                  'Pilih role',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment<String>(
+                      value: 'Pembeli',
+                      label: Text('Pembeli'),
+                      icon: Icon(Icons.shopping_bag_outlined),
+                    ),
+                    ButtonSegment<String>(
+                      value: 'Penjual',
+                      label: Text('Penjual'),
+                      icon: Icon(Icons.storefront_outlined),
+                    ),
+                  ],
+                  selected: {_selectedRole},
+                  onSelectionChanged: (roles) {
+                    setState(() => _selectedRole = roles.first);
+                  },
+                ),
+
+                const SizedBox(height: 24),
 
                 Text(
                   'Email / Username',
@@ -98,6 +165,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 8),
 
                 TextField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     hintText: 'Masukkan email dan username',
                     prefixIcon: const Icon(Icons.email_outlined),
@@ -122,6 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 8),
 
                 TextField(
+                  controller: _passwordController,
                   obscureText: !_isPasswordVisible,
                   decoration: InputDecoration(
                     hintText: 'Masukkan password',
@@ -189,14 +259,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HomePage(),
-                        ),
-                      );
-                    },
+                    onPressed: _login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF176B45),
                       foregroundColor: Colors.white,

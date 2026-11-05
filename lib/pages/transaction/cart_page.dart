@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'checkout_page.dart';
-
-import '../../data/transaction_dummy_data.dart';
+import '../../data/cart_session.dart';
 import '../../models/cart_item_model.dart';
+import '../../services/transaction_service.dart';
+import 'checkout_page.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -17,24 +17,26 @@ class _CartPageState extends State<CartPage> {
   static const Color backgroundColor = Color(0xFFF7FAF7);
   static const Color textColor = Color(0xFF242B26);
 
-  late List<CartItemModel> cartItems;
+  final TransactionService _transactionService = TransactionService.instance;
 
-  @override
-  void initState() {
-    super.initState();
-    cartItems = TransactionDummyData.cartItems;
-  }
+  List<CartItemModel> get cartItems => CartSession.items;
 
   int get totalQuantity {
     return cartItems.fold<int>(0, (total, item) => total + item.quantity);
   }
 
   int get totalPrice {
-    return TransactionDummyData.calculateCartTotal(cartItems);
+    return cartItems.fold<int>(0, (total, item) => total + item.subtotal);
+  }
+
+  int _remainingStock(CartItemModel item) {
+    return _transactionService.remainingStock(item);
   }
 
   void _increaseQuantity(CartItemModel item) {
-    if (item.quantity >= item.stock) {
+    final available = _remainingStock(item);
+
+    if (item.quantity >= available) {
       _showMessage('Jumlah tidak boleh melebihi stok tersedia');
       return;
     }
@@ -59,13 +61,15 @@ class _CartPageState extends State<CartPage> {
 
   void _removeItem(CartItemModel item) {
     setState(() {
-      cartItems.remove(item);
+      CartSession.removeItem(item.productId);
     });
 
     _showMessage('${item.productName} dihapus dari keranjang');
   }
 
   void _showMessage(String message) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
     );
@@ -76,6 +80,58 @@ class _CartPageState extends State<CartPage> {
       RegExp(r'\B(?=(\d{3})+(?!\d))'),
       (match) => '.',
     );
+  }
+
+  bool _validateCart() {
+    if (cartItems.isEmpty) {
+      _showMessage('Keranjang masih kosong');
+      return false;
+    }
+
+    for (final item in cartItems) {
+      final available = _remainingStock(item);
+
+      if (available <= 0) {
+        _showMessage('${item.productName} sudah habis. Hapus dari keranjang.');
+        return false;
+      }
+
+      if (item.quantity > available) {
+        _showMessage(
+          'Stok ${item.productName} tinggal $available porsi. '
+          'Kurangi jumlah sebelum checkout.',
+        );
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  Future<void> _openCheckout() async {
+    if (!_validateCart()) return;
+
+    final checkoutItems = cartItems.map((item) {
+      return CartItemModel(
+        productId: item.productId,
+        productName: item.productName,
+        tenantId: item.tenantId,
+        price: item.price,
+        stock: item.stock,
+        quantity: item.quantity,
+      );
+    }).toList();
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CheckoutPage(cartItems: checkoutItems),
+      ),
+    );
+
+    if (!mounted) return;
+
+    setState(() {});
   }
 
   @override
@@ -111,13 +167,20 @@ class _CartPageState extends State<CartPage> {
   }
 
   Widget _buildCartItem(CartItemModel item) {
+    final available = _remainingStock(item);
+    final hasStockProblem = item.quantity > available;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD9E3DC)),
+        border: Border.all(
+          color: hasStockProblem
+              ? Colors.red.shade300
+              : const Color(0xFFD9E3DC),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,9 +231,19 @@ class _CartPageState extends State<CartPage> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Stok tersedia: ${item.stock}',
-                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  'Stok tersedia: $available',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: hasStockProblem ? Colors.red : Colors.black54,
+                  ),
                 ),
+                if (hasStockProblem) ...[
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Jumlah melebihi stok. Silakan kurangi.',
+                    style: TextStyle(fontSize: 12, color: Colors.red),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -195,7 +268,7 @@ class _CartPageState extends State<CartPage> {
                     ),
                     IconButton.outlined(
                       tooltip: 'Tambah jumlah',
-                      onPressed: item.quantity >= item.stock
+                      onPressed: item.quantity >= available
                           ? null
                           : () => _increaseQuantity(item),
                       icon: const Icon(Icons.add),
@@ -291,29 +364,7 @@ class _CartPageState extends State<CartPage> {
             SizedBox(
               height: 48,
               child: ElevatedButton(
-                onPressed: cartItems.isEmpty
-                    ? null
-                    : () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CheckoutPage(
-                              cartItems: cartItems
-                                  .map(
-                                    (item) => CartItemModel(
-                                      productId: item.productId,
-                                      productName: item.productName,
-                                      tenantId: item.tenantId,
-                                      price: item.price,
-                                      stock: item.stock,
-                                      quantity: item.quantity,
-                                    ),
-                                  )
-                                  .toList(),
-                            ),
-                          ),
-                        );
-                      },
+                onPressed: cartItems.isEmpty ? null : _openCheckout,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryGreen,
                   foregroundColor: Colors.white,
