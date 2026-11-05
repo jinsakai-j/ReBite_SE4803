@@ -34,7 +34,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ]
         : <Widget>[
             const HomePage(),
-            const CartPage(),
+            CartPage(),
             const OrderHistoryPage(consumerId: 'CNS001'),
             ProfileScreen(
               isTenant: false,

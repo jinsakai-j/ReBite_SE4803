@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/data/smart_features_dummy_data.dart';
-import '../lib/services/surplus_prediction_service.dart';
+import 'package:rebite_mobile/data/smart_features_dummy_data.dart';
+import 'package:rebite_mobile/services/surplus_prediction_service.dart';
 
 void main() {
   test('Prediksi Nasi Ayam menghasilkan 12 permintaan dan 8 surplus', () {

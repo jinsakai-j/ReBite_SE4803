@@ -2,13 +2,14 @@ import 'dart:typed_data';
 
 import '../models/cart_item_model.dart';
 import '../models/order_model.dart';
+import '../data/transaction_dummy_data.dart';
 
 class TransactionService {
   TransactionService._();
 
   static final TransactionService instance = TransactionService._();
 
-  final List<OrderModel> _orders = [];
+  final List<OrderModel> _orders = TransactionDummyData.orders;
   final Map<String, int> _remainingStocks = {};
 
   final Set<String> _refundedOrderIds = {};

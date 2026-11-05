@@ -10,8 +10,13 @@ import 'payment_proof_page.dart';
 
 class PaymentPage extends StatefulWidget {
   final List<CartItemModel> cartItems;
+  final bool removePurchasedItemsFromCart;
 
-  const PaymentPage({super.key, required this.cartItems});
+  const PaymentPage({
+    super.key,
+    required this.cartItems,
+    this.removePurchasedItemsFromCart = true,
+  });
 
   @override
   State<PaymentPage> createState() => _PaymentPageState();
@@ -83,7 +88,9 @@ class _PaymentPageState extends State<PaymentPage> {
           );
 
       if (createdOrder == null) {
-        _removePurchasedItemsFromCart();
+        if (widget.removePurchasedItemsFromCart) {
+          _removePurchasedItemsFromCart();
+        }
 
         if (!mounted) return;
 
