@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/product.dart';
+import 'product_image.dart';
 
 // Widget untuk filter kategori makanan
 class CategoryFilter extends StatelessWidget {
@@ -89,11 +90,12 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final discount =
-        ((product.originalPrice - product.discountPrice) /
-                product.originalPrice *
-                100)
-            .round();
+    final discount = product.originalPrice > 0
+        ? ((product.originalPrice - product.discountPrice) /
+                  product.originalPrice *
+                  100)
+              .round()
+        : 0;
 
     return InkWell(
       onTap: onTap,
@@ -113,20 +115,7 @@ class ProductCard extends StatelessWidget {
                 SizedBox(
                   height: 130,
                   width: double.infinity,
-                  child: Image.network(
-                    product.image,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: const Color(0xFFE7F3EA),
-                        child: const Icon(
-                          Icons.fastfood,
-                          size: 45,
-                          color: Color(0xFF176B45),
-                        ),
-                      );
-                    },
-                  ),
+                  child: ProductImage(source: product.image, fit: BoxFit.cover),
                 ),
                 Positioned(
                   top: 8,
