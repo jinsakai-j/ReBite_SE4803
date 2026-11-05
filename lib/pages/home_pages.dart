@@ -34,6 +34,7 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFF7FAF7),
         elevation: 0,
+        centerTitle: true,
         title: const Text(
           'ReBite',
           style: TextStyle(
