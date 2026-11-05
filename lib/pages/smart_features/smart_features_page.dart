@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'surplus_prediction_page.dart';
-import 'dynamic_discount_page.dart';
 import 'food_rescue_impact_page.dart';
 
 class SmartFeaturesPage extends StatelessWidget {
@@ -46,16 +45,6 @@ class SmartFeaturesPage extends StatelessWidget {
             description:
                 'Lihat estimasi permintaan dan potensi surplus produk.',
             page: const SurplusPredictionPage(),
-          ),
-
-          const SizedBox(height: 12),
-
-          _buildFeatureCard(
-            context: context,
-            icon: Icons.percent_outlined,
-            title: 'Dynamic Discount',
-            description: 'Lihat dan kelola rekomendasi diskon produk.',
-            page: const DynamicDiscountPage(),
           ),
 
           const SizedBox(height: 12),
