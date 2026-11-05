@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../data/cart_session.dart';
 import '../../models/cart_item_model.dart';
 import '../../models/order_model.dart';
 import '../../services/transaction_service.dart';
@@ -40,8 +41,28 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   void _showMessage(String message) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _removePurchasedItemsFromCart() {
+    for (final purchasedItem in widget.cartItems) {
+      final index = CartSession.items.indexWhere(
+        (item) => item.productId == purchasedItem.productId,
+      );
+
+      if (index == -1) continue;
+
+      final cartItem = CartSession.items[index];
+
+      if (cartItem.quantity <= purchasedItem.quantity) {
+        CartSession.items.removeAt(index);
+      } else {
+        cartItem.quantity -= purchasedItem.quantity;
+      }
+    }
   }
 
   Future<void> _continuePayment() async {
@@ -62,6 +83,10 @@ class _PaymentPageState extends State<PaymentPage> {
           );
 
       if (createdOrder == null) {
+        _removePurchasedItemsFromCart();
+
+        if (!mounted) return;
+
         setState(() {
           createdOrder = order;
         });
@@ -159,6 +184,7 @@ class _PaymentPageState extends State<PaymentPage> {
           style: TextStyle(color: Colors.black54),
         ),
         const SizedBox(height: 20),
+
         RadioGroup<PaymentMethod>(
           groupValue: selectedMethod,
           onChanged: (PaymentMethod? value) {
@@ -242,6 +268,7 @@ class _PaymentPageState extends State<PaymentPage> {
               ),
               const SizedBox(height: 12),
             ],
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -259,7 +286,9 @@ class _PaymentPageState extends State<PaymentPage> {
                 ),
               ],
             ),
+
             const SizedBox(height: 16),
+
             SizedBox(
               height: 48,
               child: ElevatedButton(
