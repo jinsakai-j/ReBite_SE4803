@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'theme/app_theme.dart';
-import 'pages/tenant_dashboard_screen.dart';
 import 'routes/app_routes.dart';
 import 'pages/welcome_screen.dart';
 import 'pages/splash_screen.dart';
@@ -27,7 +26,6 @@ class ReBiteApp extends StatelessWidget {
         AppRoutes.welcome: (context) => const WelcomeScreen(),
         AppRoutes.login: (context) => const LoginScreen(),
         AppRoutes.register: (context) => const RegisterScreen(),
-        '/tenant-dashboard': (context) => const TenantDashboardScreen(),
       },
     );
   }
