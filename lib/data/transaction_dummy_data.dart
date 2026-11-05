@@ -4,7 +4,6 @@ import '../models/cart_item_model.dart';
 import '../models/order_model.dart';
 
 class TransactionDummyData {
-  // Data contoh untuk halaman keranjang.
   static List<CartItemModel> get cartItems => [
     CartItemModel(
       productId: 'PRD001',
@@ -32,7 +31,6 @@ class TransactionDummyData {
     ),
   ];
 
-  // Data contoh untuk riwayat pesanan.
   static List<OrderModel> get orders => [
     OrderModel(
       orderId: 'ORD001',
@@ -69,12 +67,10 @@ class TransactionDummyData {
     ),
   ];
 
-  // Total harga semua item dalam keranjang.
   static int calculateCartTotal(List<CartItemModel> items) {
     return items.fold<int>(0, (total, item) => total + item.subtotal);
   }
 
-  // Menampilkan contoh hasil perhitungan saat debugging.
   static void printCartSummary() {
     final items = cartItems;
 

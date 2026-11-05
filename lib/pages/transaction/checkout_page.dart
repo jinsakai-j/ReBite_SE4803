@@ -6,8 +6,13 @@ import '../../models/cart_item_model.dart';
 
 class CheckoutPage extends StatelessWidget {
   final List<CartItemModel> cartItems;
+  final bool removePurchasedItemsFromCart;
 
-  const CheckoutPage({super.key, required this.cartItems});
+  const CheckoutPage({
+    super.key,
+    required this.cartItems,
+    this.removePurchasedItemsFromCart = true,
+  });
 
   static const Color primaryGreen = Color(0xFF176B45);
   static const Color backgroundColor = Color(0xFFF7FAF7);
@@ -220,8 +225,11 @@ class CheckoutPage extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                PaymentPage(cartItems: cartItems),
+                            builder: (context) => PaymentPage(
+                              cartItems: cartItems,
+                              removePurchasedItemsFromCart:
+                                  removePurchasedItemsFromCart,
+                            ),
                           ),
                         );
                       },

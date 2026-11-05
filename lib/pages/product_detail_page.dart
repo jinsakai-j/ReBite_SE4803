@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../data/cart_session.dart';
 import '../models/product.dart';
+import 'transaction/checkout_page.dart';
 
 class ProductDetailPage extends StatelessWidget {
   final Product product;
@@ -9,6 +11,33 @@ class ProductDetailPage extends StatelessWidget {
 
   String formatRupiah(int price) {
     return 'Rp${price.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (match) => '${match[1]}.')}';
+  }
+
+  void _addToCart(BuildContext context) {
+    final added = CartSession.addProduct(product);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          added
+              ? '${product.name} ditambahkan ke keranjang'
+              : 'Stok produk tidak mencukupi',
+        ),
+      ),
+    );
+  }
+
+  void _buyNow(BuildContext context) {
+    final cartItem = CartSession.itemFor(product);
+
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) => CheckoutPage(
+          cartItems: [cartItem],
+          removePurchasedItemsFromCart: false,
+        ),
+      ),
+    );
   }
 
   @override
@@ -240,6 +269,47 @@ class ProductDetailPage extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: product.stock > 0
+                      ? () => _addToCart(context)
+                      : null,
+                  icon: const Icon(Icons.add_shopping_cart),
+                  label: const Text('Keranjang'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF176B45),
+                    minimumSize: const Size.fromHeight(50),
+                    side: const BorderSide(color: Color(0xFF176B45)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: product.stock > 0 ? () => _buyNow(context) : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF176B45),
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Beli Sekarang'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

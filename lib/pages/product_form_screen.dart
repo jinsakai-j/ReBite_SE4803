@@ -323,7 +323,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             const SizedBox(height: 16),
 
             DropdownButtonFormField<String>(
-              value: _selectedCategory,
+              initialValue: _selectedCategory,
               decoration: const InputDecoration(labelText: 'Kategori'),
               items: const [
                 DropdownMenuItem(value: 'Makanan', child: Text('Makanan')),

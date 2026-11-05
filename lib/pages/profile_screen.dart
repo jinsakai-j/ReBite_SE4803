@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -40,11 +38,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final updated = await Navigator.push<ProfileDetails>(
       context,
       MaterialPageRoute<ProfileDetails>(
-        builder: (_) => EditProfileScreen(
-          name: _name,
-          email: _email,
-          phone: _phone,
-        ),
+        builder: (_) =>
+            EditProfileScreen(name: _name, email: _email, phone: _phone),
       ),
     );
 
@@ -108,10 +103,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(address),
-                  onTap: () => Navigator.pop(
-                    dialogContext,
-                    address.split(' — ').last,
-                  ),
+                  onTap: () =>
+                      Navigator.pop(dialogContext, address.split(' — ').last),
                 ),
               TextField(
                 controller: controller,
@@ -237,9 +230,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Center(
             child: Chip(
               label: Text(widget.isTenant ? 'Penjual' : 'Pembeli'),
-              avatar: Icon(
-                widget.isTenant ? Icons.store : Icons.shopping_bag,
-              ),
+              avatar: Icon(widget.isTenant ? Icons.store : Icons.shopping_bag),
             ),
           ),
           Card(
