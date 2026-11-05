@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../data/smart_features_dummy_data.dart';
+import '../../models/order_model.dart';
+import '../../models/food_rescue_impact_model.dart';
+import '../../services/transaction_service.dart';
 import '../../services/food_rescue_impact_service.dart';
 
 class FoodRescueImpactPage extends StatelessWidget {
@@ -9,7 +11,21 @@ class FoodRescueImpactPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final orders = SmartFeaturesDummyData.rescueOrders;
+    final transactionOrders = TransactionService.instance.ordersForTenant(
+      'TNT001',
+    );
+
+    final orders = transactionOrders.map((order) {
+      return FoodRescueImpactModel(
+        orderId: order.orderId,
+        tenantId: order.tenantId,
+        consumerId: order.consumerId,
+        productName: order.productName,
+        quantity: order.quantity,
+        isPickedUp: order.status == OrderStatus.completed,
+      );
+    }).toList();
+
     final result = FoodRescueImpactService.calculate(orders);
 
     return Scaffold(
