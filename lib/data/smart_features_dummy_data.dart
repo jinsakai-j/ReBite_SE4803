@@ -1,5 +1,4 @@
 import '../models/surplus_prediction_model.dart';
-import '../models/discount_recommendation_model.dart';
 import '../models/food_rescue_impact_model.dart';
 
 class SmartFeaturesDummyData {
@@ -30,25 +29,6 @@ class SmartFeaturesDummyData {
       salesHistory: [3],
       salesDay: 'Rabu',
       salesTime: 'Sore',
-    ),
-  ];
-
-  static final List<DiscountRecommendationModel> discountProducts = [
-    DiscountRecommendationModel(
-      productName: 'Nasi Ayam',
-      originalPrice: 20000,
-      remainingStock: 10,
-      minutesUntilClosing: 60,
-      soldToday: 5,
-      minutesSellingToday: 240,
-    ),
-    DiscountRecommendationModel(
-      productName: 'Roti Cokelat',
-      originalPrice: 12000,
-      remainingStock: 8,
-      minutesUntilClosing: 120,
-      soldToday: 12,
-      minutesSellingToday: 240,
     ),
   ];
 
