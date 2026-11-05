@@ -54,7 +54,7 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF7), // Sesuai ketentuan background
+      backgroundColor: const Color(0xFFF7FAF7),
       appBar: AppBar(
         title: const Text(
           'Tenant Dashboard',
@@ -109,9 +109,7 @@ class _TenantDashboardScreenState extends State<TenantDashboardScreen> {
                   ElevatedButton.icon(
                     onPressed: () => _navigateToForm(),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(
-                        0xFF176B45,
-                      ), // Sesuai ketentuan primary green
+                      backgroundColor: const Color(0xFF176B45),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
